@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title_en TEXT, title_ru TEXT,
     descr_en TEXT, descr_ru TEXT,
-    price_micro INTEGER,          -- price in micro-USDT (6 decimals)
+    kind TEXT DEFAULT 'physical', -- physical -> USDT, digital -> Telegram Stars (Telegram rules)
+    price_micro INTEGER,          -- price in micro-USDT (6 decimals), physical goods
+    price_stars INTEGER,          -- price in Telegram Stars, digital goods
     content TEXT,                 -- what the buyer receives after payment
     active INTEGER DEFAULT 1
 );
@@ -28,6 +30,8 @@ CREATE TABLE IF NOT EXISTS orders (
     amount_micro INTEGER,         -- unique amount the buyer must send
     status TEXT,                  -- pending | paid | expired
     tx_id TEXT,
+    method TEXT DEFAULT 'usdt',   -- usdt | stars
+    address TEXT,                 -- delivery details for physical goods
     created_at INTEGER,
     paid_at INTEGER
 );
@@ -36,16 +40,16 @@ CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
 """
 
 DEMO_PRODUCTS = [
-    ("Private channel access — 30 days", "Доступ в закрытый канал — 30 дней",
-     "Invite link is sent automatically after payment.",
-     "Ссылка-приглашение приходит автоматически после оплаты.",
-     5_000_000, "Your invite: https://t.me/+DEMO_INVITE_LINK"),
-    ("PDF guide: Telegram bots that sell", "PDF-гайд: Telegram-боты, которые продают",
-     "Instant download after payment.", "Скачивание сразу после оплаты.",
-     3_000_000, "Download: https://example.com/guide.pdf (demo)"),
-    ("License key — Pro plan", "Лицензионный ключ — тариф Pro",
-     "Unique key is issued to you after payment.", "Уникальный ключ выдаётся после оплаты.",
-     10_000_000, "KEY-{order_id}-{rand}"),
+    # (kind, title_en, title_ru, descr_en, descr_ru, price_micro, price_stars, content)
+    ("physical", "Specialty coffee beans, 1 kg", "Кофе в зёрнах specialty, 1 кг",
+     "Ethiopia Yirgacheffe, roasted to order. Worldwide shipping.", "Эфиопия Иргачеффе, обжарка под заказ. Доставка по миру.",
+     18_000_000, None, "Thanks! Your order is being packed. Tracking number will be sent here."),
+    ("physical", "Mechanical keyboard, 75%", "Механическая клавиатура 75%",
+     "Hot-swap, PBT keycaps, RU/EN layout.", "Hot-swap, PBT-кейкапы, раскладка RU/EN.",
+     65_000_000, None, "Thanks! Your keyboard ships within 2 business days."),
+    ("digital", "PDF guide: Telegram bots that sell", "PDF-гайд: Telegram-боты, которые продают",
+     "Digital product — paid in Telegram Stars per Telegram rules.", "Цифровой товар — оплата в Telegram Stars по правилам Telegram.",
+     None, 1, "Download: https://example.com/guide.pdf (demo)"),
 ]
 
 
@@ -57,7 +61,7 @@ async def connect() -> aiosqlite.Connection:
     cur = await db.execute("SELECT COUNT(*) FROM products")
     if (await cur.fetchone())[0] == 0:
         await db.executemany(
-            "INSERT INTO products(title_en,title_ru,descr_en,descr_ru,price_micro,content) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO products(kind,title_en,title_ru,descr_en,descr_ru,price_micro,price_stars,content) VALUES (?,?,?,?,?,?,?,?)",
             DEMO_PRODUCTS,
         )
     await db.commit()
@@ -96,7 +100,7 @@ async def product(db, pid: int):
 
 async def create_order(db, user_id: int, prod) -> aiosqlite.Row:
     """Price + a unique 0.001–0.999 tail so each pending order is identifiable on-chain."""
-    cur = await db.execute("SELECT amount_micro FROM orders WHERE status='pending'")
+    cur = await db.execute("SELECT amount_micro FROM orders WHERE status='pending' AND method='usdt'")
     taken = {r[0] for r in await cur.fetchall()}
     for _ in range(1000):
         amount = prod["price_micro"] + random.randint(1, 999) * 1000
@@ -112,13 +116,27 @@ async def create_order(db, user_id: int, prod) -> aiosqlite.Row:
     return await order(db, cur.lastrowid)
 
 
+async def create_stars_order(db, user_id: int, prod) -> int:
+    cur = await db.execute(
+        "INSERT INTO orders(user_id,product_id,amount_micro,status,created_at,method) VALUES(?,?,?,?,?,?)",
+        (user_id, prod["id"], 0, "pending", int(time.time()), "stars"),
+    )
+    await db.commit()
+    return cur.lastrowid
+
+
+async def set_address(db, oid: int, address: str):
+    await db.execute("UPDATE orders SET address=? WHERE id=?", (address, oid))
+    await db.commit()
+
+
 async def order(db, oid: int):
     cur = await db.execute("SELECT * FROM orders WHERE id=?", (oid,))
     return await cur.fetchone()
 
 
 async def pending_orders(db):
-    cur = await db.execute("SELECT * FROM orders WHERE status='pending'")
+    cur = await db.execute("SELECT * FROM orders WHERE status='pending' AND method='usdt'")
     return await cur.fetchall()
 
 
@@ -136,7 +154,7 @@ async def mark_paid(db, oid: int, tx_id: str) -> bool:
 
 async def expire_old(db, ttl_min: int) -> list[int]:
     limit = int(time.time()) - ttl_min * 60
-    cur = await db.execute("SELECT id, user_id FROM orders WHERE status='pending' AND created_at<?", (limit,))
+    cur = await db.execute("SELECT id, user_id FROM orders WHERE status='pending' AND method='usdt' AND created_at<?", (limit,))
     rows = await cur.fetchall()
     await db.execute("UPDATE orders SET status='expired' WHERE status='pending' AND created_at<?", (limit,))
     await db.commit()
@@ -163,8 +181,10 @@ async def stats(db) -> dict:
     q = lambda sql: db.execute(sql)
     users = (await (await q("SELECT COUNT(*) FROM users")).fetchone())[0]
     total = (await (await q("SELECT COUNT(*) FROM orders")).fetchone())[0]
-    paid = (await (await q("SELECT COUNT(*), COALESCE(SUM(amount_micro),0) FROM orders WHERE status='paid'")).fetchone())
-    return {"users": users, "orders": total, "paid": paid[0], "revenue": paid[1] / 1_000_000}
+    paid = (await (await q("SELECT COUNT(*), COALESCE(SUM(amount_micro),0) FROM orders WHERE status='paid' AND method='usdt'")).fetchone())
+    stars = (await (await q("SELECT COUNT(*), COALESCE(SUM(p.price_stars),0) FROM orders o JOIN products p ON p.id=o.product_id "
+                             "WHERE o.status='paid' AND o.method='stars'")).fetchone())
+    return {"users": users, "orders": total, "paid": paid[0] + stars[0], "revenue": paid[1] / 1_000_000, "stars": stars[1]}
 
 
 async def all_user_ids(db) -> list[int]:

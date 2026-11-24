@@ -11,6 +11,19 @@ T = {
     "btn_lang": {"en": "🇷🇺 Русский", "ru": "🇬🇧 English"},
     "btn_back": {"en": "« Back", "ru": "« Назад"},
     "btn_buy": {"en": "💳 Buy for {price} USDT", "ru": "💳 Купить за {price} USDT"},
+    "btn_stars": {"en": "⭐ Buy for {price} Stars", "ru": "⭐ Купить за {price} Stars"},
+    "ask_address": {
+        "en": "📦 Please send your delivery details in one message: name, phone, full address.",
+        "ru": "📦 Отправьте одним сообщением данные для доставки: имя, телефон, полный адрес.",
+    },
+    "address_saved": {"en": "✅ Delivery details saved. We'll keep you posted here.",
+                      "ru": "✅ Данные доставки сохранены. Статус заказа пришлём сюда."},
+    "paysupport": {
+        "en": "💬 Payment support: describe the problem and your order number, and the seller will reply here. "
+              "Refunds for Stars payments are made back to your Stars balance.",
+        "ru": "💬 Поддержка по оплате: опишите проблему и номер заказа — продавец ответит здесь. "
+              "Возврат за оплату Stars делается обратно на баланс Stars.",
+    },
     "btn_check": {"en": "🔄 Check payment", "ru": "🔄 Проверить оплату"},
     "btn_simulate": {"en": "🧪 Simulate payment (demo)", "ru": "🧪 Симулировать оплату (демо)"},
     "catalog": {"en": "🛍 <b>Catalog</b>", "ru": "🛍 <b>Каталог</b>"},
@@ -38,14 +51,16 @@ T = {
                 "ru": "⌛ Неоплаченный заказ истёк. Можно создать новый в каталоге."},
     "no_orders": {"en": "You have no orders yet.", "ru": "У вас пока нет заказов."},
     "about": {
-        "en": "ℹ️ <b>What this bot shows</b>\n\n• USDT TRC20 payments with automatic on-chain detection\n"
+        "en": "ℹ️ <b>What this bot shows</b>\n\n• USDT TRC20 payments for physical goods with automatic on-chain detection\n"
+              "• Telegram Stars for digital goods — compliant with Telegram's developer terms\n"
               "• Unique amount per order — no manual checking of screenshots\n"
-              "• Instant delivery: links, files, unique license keys\n• Admin panel: stats, orders, CSV export, broadcast\n"
+              "• Delivery details collected after payment; instant delivery of digital goods\n• Admin panel: stats, orders, CSV export, broadcast\n"
               "• RU/EN interface\n\nNo private keys are stored — the bot only reads incoming transfers.\n\n"
               "Want a bot like this for your project? Contact the developer: {contact}",
-        "ru": "ℹ️ <b>Что показывает этот бот</b>\n\n• Приём USDT TRC20 с автоматической проверкой в блокчейне\n"
+        "ru": "ℹ️ <b>Что показывает этот бот</b>\n\n• Приём USDT TRC20 за физические товары с автоматической проверкой в блокчейне\n"
+              "• Telegram Stars за цифровые товары — по правилам Telegram для разработчиков\n"
               "• Уникальная сумма на каждый заказ — никаких скриншотов и ручных проверок\n"
-              "• Мгновенная выдача: ссылки, файлы, уникальные ключи\n• Админка: статистика, заказы, выгрузка CSV, рассылка\n"
+              "• Сбор данных доставки после оплаты; мгновенная выдача цифровых товаров\n• Админка: статистика, заказы, выгрузка CSV, рассылка\n"
               "• Интерфейс RU/EN\n\nПриватные ключи не хранятся — бот только читает входящие переводы.\n\n"
               "Нужен такой бот для вашего проекта? Пишите разработчику: {contact}",
     },

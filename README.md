@@ -1,7 +1,11 @@
-# USDT Pay Bot — Telegram shop with automatic USDT (TRC20) payments
+# USDT Pay Bot — Telegram shop: USDT (TRC20) for physical goods, Telegram Stars for digital
 
-A production-ready template of a Telegram bot that sells digital goods and accepts **USDT on TRON (TRC20)**.
-Payments are detected **automatically on-chain** — no screenshots, no manual checks.
+A production-ready template of a Telegram shop bot that accepts **USDT on TRON (TRC20)** for physical goods
+and **Telegram Stars** for digital goods. USDT payments are detected **automatically on-chain** — no screenshots, no manual checks.
+
+> ⚠️ **Compliant with Telegram's rules.** Telegram's developer terms require digital goods and services sold in bots
+> to be paid in Stars, and in November 2026 Telegram warned that bots taking other payments for digital goods may be blocked.
+> This template routes digital products to Stars and uses USDT only for physical goods.
 
 **Live demo:** [@usdt_pay_demo_bot](https://t.me/usdt_pay_demo_bot) (demo mode lets you simulate a payment)
 
@@ -9,7 +13,8 @@ Payments are detected **automatically on-chain** — no screenshots, no manual c
 - 💳 USDT TRC20 payments, verified via TronGrid (confirmed transactions only)
 - 🔢 Unique amount per order (e.g. `5.437 USDT`) → each transfer maps to exactly one order
 - 🛡 Read-only: **no private keys** are stored; one transaction can't pay two orders
-- 🎁 Instant delivery: invite links, files, auto-generated license keys
+- ⭐ Telegram Stars invoices for digital goods, `/paysupport` command
+- 📦 Delivery details collected right after a physical-goods payment
 - ⏱ Order expiry with user notification
 - 👤 Admin panel: `/admin` stats, `/orders`, `/export` CSV, `/broadcast`
 - 🌍 RU / EN interface, auto-detected
@@ -31,7 +36,7 @@ attach a volume at `/app/data` and set `DB_PATH=/app/data/bot.db`.
 4. The buyer gets the product, admins get a notification with the TX hash.
 
 ## Customization I offer
-Subscriptions to private channels with auto-kick on expiry, TON / BEP20 / Solana payments, CryptoBot / Telegram Stars,
+**Migrating an existing bot's digital-goods payments to Telegram Stars**, subscriptions with auto-kick on expiry, TON / BEP20 / Solana payments,
 Mini App storefront, Google Sheets sync, referral systems, multi-language catalogs.
 
 ---
@@ -42,6 +47,6 @@ Contact: Telegram [@IlyaKonygin](https://t.me/IlyaKonygin) · Payment for custom
 ---
 
 ## 🇷🇺 Кратко по-русски
-Шаблон Telegram-бота-магазина с **автоматическим приёмом USDT TRC20**: уникальная сумма на заказ,
-проверка в блокчейне, мгновенная выдача товара, админка со статистикой, выгрузкой CSV и рассылкой.
-Сделаю такой же или доработаю под ваш проект — пишите в Telegram [@IlyaKonygin](https://t.me/IlyaKonygin).
+Шаблон Telegram-бота-магазина: **USDT TRC20 за физические товары** (уникальная сумма на заказ, проверка в блокчейне)
+и **Telegram Stars за цифровые** — как требуют правила Telegram. Сбор данных доставки, админка со статистикой, выгрузкой CSV и рассылкой.
+Переведу оплату цифровых товаров в вашем боте на Stars, сделаю такой же бот или доработаю ваш — пишите в Telegram [@IlyaKonygin](https://t.me/IlyaKonygin).
