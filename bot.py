@@ -354,8 +354,10 @@ async def main():
             log.info("Running as @%s", me.username)
             break
         except TelegramRetryAfter as e:
-            log.warning("Flood control: sleeping %s s", e.retry_after)
-            await asyncio.sleep(e.retry_after + 1)
+            # back off exponentially: hammering getMe every retry_after keeps the limit alive
+            delay = min(e.retry_after * (2 ** attempt), 900)
+            log.warning("Flood control (attempt %s): sleeping %s s", attempt + 1, delay)
+            await asyncio.sleep(delay)
     asyncio.create_task(payment_loop(bot))
     await dp.start_polling(bot)
 
