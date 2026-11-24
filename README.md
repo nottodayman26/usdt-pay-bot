@@ -26,8 +26,10 @@ pip install -r requirements.txt
 cp .env.example .env   # fill BOT_TOKEN, WALLET_ADDRESS, ADMIN_IDS
 export $(cat .env | xargs) && python bot.py
 ```
-On Railway: create a service from this repo, add the variables from `.env.example`,
-attach a volume at `/app/data` and set `DB_PATH=/app/data/bot.db`.
+On Railway / any VPS: run `bot.py` (long polling) with the variables from `.env.example`.
+
+**Serverless version (what the live demo runs on):** `supabase/functions/tg-bot` — a Supabase Edge Function in webhook mode
+(TypeScript), Postgres for orders, `pg_cron` polls TronGrid every minute. No server to keep alive, fits the free tier.
 
 ## How payment matching works
 1. Buyer opens a product → bot creates an order with price + a unique tail (0.001–0.999 USDT).
@@ -41,7 +43,7 @@ Mini App storefront, Google Sheets sync, referral systems, multi-language catalo
 
 ---
 
-**Author:** Ilya — Telegram bots & automation (Python, aiogram, blockchain payments).
+**Author:** Telegram bots & automation (Python, aiogram, blockchain payments).
 Contact: Telegram [@IlyaKonygin](https://t.me/IlyaKonygin) · Payment for custom work in USDT.
 
 ---
