@@ -8,6 +8,7 @@ import time
 import aiohttp
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
+from aiogram.exceptions import TelegramRetryAfter
 from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.types import BufferedInputFile, CallbackQuery, LabeledPrice, Message, PreCheckoutQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -346,6 +347,15 @@ async def main():
     bot = Bot(cfg.bot_token, default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher()
     dp.include_router(router)
+    # Wait out Telegram flood control instead of crash-looping (each restart calls getMe again)
+    for attempt in range(20):
+        try:
+            me = await bot.get_me()
+            log.info("Running as @%s", me.username)
+            break
+        except TelegramRetryAfter as e:
+            log.warning("Flood control: sleeping %s s", e.retry_after)
+            await asyncio.sleep(e.retry_after + 1)
     asyncio.create_task(payment_loop(bot))
     await dp.start_polling(bot)
 
