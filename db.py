@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS products (
     price_micro INTEGER,          -- price in micro-USDT (6 decimals), physical goods
     price_stars INTEGER,          -- price in Telegram Stars, digital goods
     content TEXT,                 -- what the buyer receives after payment
+    image TEXT,                   -- file name in img/
     active INTEGER DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS orders (
@@ -40,16 +41,16 @@ CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
 """
 
 DEMO_PRODUCTS = [
-    # (kind, title_en, title_ru, descr_en, descr_ru, price_micro, price_stars, content)
+    # (kind, title_en, title_ru, descr_en, descr_ru, price_micro, price_stars, content, image)
     ("physical", "Specialty coffee beans, 1 kg", "Кофе в зёрнах specialty, 1 кг",
      "Ethiopia Yirgacheffe, roasted to order. Worldwide shipping.", "Эфиопия Иргачеффе, обжарка под заказ. Доставка по миру.",
-     18_000_000, None, "Thanks! Your order is being packed. Tracking number will be sent here."),
+     18_000_000, None, "Thanks! Your order is being packed. Tracking number will be sent here.", "product_coffee.jpg"),
     ("physical", "Mechanical keyboard, 75%", "Механическая клавиатура 75%",
      "Hot-swap, PBT keycaps, RU/EN layout.", "Hot-swap, PBT-кейкапы, раскладка RU/EN.",
-     65_000_000, None, "Thanks! Your keyboard ships within 2 business days."),
+     65_000_000, None, "Thanks! Your keyboard ships within 2 business days.", "product_keyboard.jpg"),
     ("digital", "PDF guide: Telegram bots that sell", "PDF-гайд: Telegram-боты, которые продают",
      "Digital product — paid in Telegram Stars per Telegram rules.", "Цифровой товар — оплата в Telegram Stars по правилам Telegram.",
-     None, 1, "Download: https://example.com/guide.pdf (demo)"),
+     None, 1, "Download: https://example.com/guide.pdf (demo)", "product_guide.jpg"),
 ]
 
 
@@ -61,7 +62,7 @@ async def connect() -> aiosqlite.Connection:
     cur = await db.execute("SELECT COUNT(*) FROM products")
     if (await cur.fetchone())[0] == 0:
         await db.executemany(
-            "INSERT INTO products(kind,title_en,title_ru,descr_en,descr_ru,price_micro,price_stars,content) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO products(kind,title_en,title_ru,descr_en,descr_ru,price_micro,price_stars,content,image) VALUES (?,?,?,?,?,?,?,?,?)",
             DEMO_PRODUCTS,
         )
     await db.commit()

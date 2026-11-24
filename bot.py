@@ -2,6 +2,7 @@ import asyncio
 import csv
 import io
 import logging
+import os
 import secrets
 import time
 
@@ -10,7 +11,7 @@ from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramRetryAfter
 from aiogram.filters import Command, CommandObject, CommandStart
-from aiogram.types import BufferedInputFile, CallbackQuery, LabeledPrice, Message, PreCheckoutQuery
+from aiogram.types import BufferedInputFile, CallbackQuery, FSInputFile, LabeledPrice, Message, PreCheckoutQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 import db as store
@@ -49,6 +50,25 @@ def back_kb(lang, to="home"):
     return kb.as_markup()
 
 
+IMG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "img")
+
+
+async def show(c: CallbackQuery, text: str, markup, photo: str | None = None):
+    """Edit in place when possible; switch between text and photo messages by re-sending."""
+    msg = c.message
+    if photo is None and not msg.photo:
+        await msg.edit_text(text, reply_markup=markup)
+        return
+    try:
+        await msg.delete()
+    except Exception:
+        pass
+    if photo:
+        await msg.answer_photo(FSInputFile(os.path.join(IMG_DIR, photo)), caption=text, reply_markup=markup)
+    else:
+        await msg.answer(text, reply_markup=markup)
+
+
 async def lang_of(user_id):
     return await store.get_lang(DB, user_id)
 
@@ -65,7 +85,7 @@ async def start(m: Message):
 @router.callback_query(F.data == "home")
 async def home(c: CallbackQuery):
     lang = await lang_of(c.from_user.id)
-    await c.message.edit_text(t("welcome", lang), reply_markup=main_kb(lang))
+    await show(c, t("welcome", lang), main_kb(lang))
     await c.answer()
 
 
@@ -93,7 +113,7 @@ async def catalog(c: CallbackQuery):
         kb.button(text=f"{title(p, lang)} — {price}", callback_data=f"p:{p['id']}")
     kb.button(text=t("btn_back", lang), callback_data="home")
     kb.adjust(1)
-    await c.message.edit_text(t("catalog", lang), reply_markup=kb.as_markup())
+    await show(c, t("catalog", lang), kb.as_markup())
     await c.answer()
 
 
@@ -109,7 +129,7 @@ async def show_product(c: CallbackQuery):
         kb.button(text=t("btn_buy", lang, price=fmt(p["price_micro"])), callback_data=f"buy:{p['id']}")
     kb.button(text=t("btn_back", lang), callback_data="catalog")
     kb.adjust(1)
-    await c.message.edit_text(f"<b>{title(p, lang)}</b>\n\n{descr}", reply_markup=kb.as_markup())
+    await show(c, f"<b>{title(p, lang)}</b>\n\n{descr}", kb.as_markup(), photo=p["image"])
     await c.answer()
 
 
@@ -132,7 +152,7 @@ async def buy(c: CallbackQuery):
              wallet=cfg.wallet, ttl=cfg.order_ttl_min)
     if cfg.demo_mode:
         text += t("demo_note", lang)
-    await c.message.edit_text(text, reply_markup=invoice_kb(lang, o["id"]))
+    await show(c, text, invoice_kb(lang, o["id"]))
     await c.answer()
 
 
@@ -213,7 +233,7 @@ async def my_orders(c: CallbackQuery):
         text = "\n".join(
             f"#{r['id']} · {r['title_ru'] if lang == 'ru' else r['title_en']} · {(fmt(r['amount_micro']) + ' USDT') if r['method'] == 'usdt' else 'Stars'} · {st[r['status']]}"
             for r in rows)
-    await c.message.edit_text(text, reply_markup=back_kb(lang))
+    await show(c, text, back_kb(lang))
     await c.answer()
 
 
